@@ -1,0 +1,31 @@
+{
+  "name": "elverion/dependency-injection",
+  "type": "library",
+  "autoload": {
+    "psr-4": {
+      "Elverion\\DependencyInjection\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "elverion",
+      "email": "elverion@users.noreply.github.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "psr/container": "^2.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5",
+    "symfony/var-dumper": "^5.3"
+  },
+  "provide": {
+    "psr/container-implementation": "1.0"
+  }
+}
