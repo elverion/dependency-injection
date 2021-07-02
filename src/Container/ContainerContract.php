@@ -76,4 +76,10 @@ interface ContainerContract extends ContainerInterface
      * @return bool
      */
     public function hasBind(string $abstract): bool;
+
+    /**
+     * Forget all binds, resolutions, etc.
+     * @return void
+     */
+    public function flush(): void;
 }

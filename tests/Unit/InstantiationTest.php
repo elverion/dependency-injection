@@ -20,7 +20,7 @@ class InstantiationTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->container = Container::getInstance();
+        $this->container = new Container();
     }
 
     public function testCanInstantiate()
@@ -74,5 +74,53 @@ class InstantiationTest extends TestCase
 
         $result = $this->container->make(InstantiableClassInterface::class);
         self::assertInstanceOf(InstantiableByInterfaceClass::class, $result);
+    }
+
+    public function testResolveReturnsSameInstanceMultipleTimes()
+    {
+        $inst1 = $this->container->resolve(InstantiableClassWithoutParams::class);
+        $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
+
+        self::assertSame($inst1, $inst2);
+    }
+
+    /**
+     * @depends testResolveReturnsSameInstanceMultipleTimes
+     * @throws \ReflectionException
+     */
+    public function testRebindReturnsNewInstance()
+    {
+        $this->container->resolve(InstantiableClassWithoutParams::class);
+
+        $new = new InstantiableClassWithoutParams();
+        $this->container->bind(InstantiableClassWithoutParams::class, $new);
+        $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
+
+        self::assertSame($new, $inst2);
+    }
+
+    public function testFlushRemovesResolvedInstances()
+    {
+        $inst1 = $this->container->resolve(InstantiableClassWithoutParams::class);
+        self::assertTrue($this->container->has(InstantiableClassWithoutParams::class));
+
+        $this->container->flush();
+        self::assertFalse($this->container->has(InstantiableClassWithoutParams::class));
+        $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
+
+        self::assertNotSame($inst1, $inst2);
+    }
+
+    public function testFlushRemovesBoundInstances()
+    {
+        $inst1 = new InstantiableClassWithoutParams();
+        $this->container->bind(InstantiableClassWithoutParams::class, $inst1);
+        self::assertTrue($this->container->has(InstantiableClassWithoutParams::class));
+
+        $this->container->flush();
+        self::assertFalse($this->container->has(InstantiableClassWithoutParams::class));
+        $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
+
+        self::assertNotSame($inst1, $inst2);
     }
 }

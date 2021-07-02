@@ -137,6 +137,10 @@ class Container implements ContainerContract
      */
     public function resolve(string $id)
     {
+        if ($this->hasBind($id)) {
+            return $this->binds[$id];
+        }
+
         if ($this->has($id)) {
             return $this->resolved[$id];
         }
@@ -236,6 +240,16 @@ class Container implements ContainerContract
     }
 
     /**
+     * Forget all binds, resolutions, etc.
+     * @return void
+     */
+    public function flush(): void
+    {
+        $this->binds = [];
+        $this->resolved = [];
+    }
+
+    /**
      * Finds an entry of the container by its identifier and returns it.
      *
      * @param string $id Identifier of the entry to look for.
@@ -267,6 +281,7 @@ class Container implements ContainerContract
      */
     public function has(string $id): bool
     {
-        return array_key_exists($id, $this->resolved);
+        return array_key_exists($id, $this->resolved)
+            || array_key_exists($id, $this->binds);
     }
 }
