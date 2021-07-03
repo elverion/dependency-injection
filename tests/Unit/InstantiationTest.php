@@ -76,8 +76,9 @@ class InstantiationTest extends TestCase
         self::assertInstanceOf(InstantiableByInterfaceClass::class, $result);
     }
 
-    public function testResolveReturnsSameInstanceMultipleTimes()
+    public function testResolveReturnsSingletonIfAvailable()
     {
+        $this->container->register(InstantiableClassWithoutParams::class, new InstantiableClassWithoutParams());
         $inst1 = $this->container->resolve(InstantiableClassWithoutParams::class);
         $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
 
@@ -85,24 +86,12 @@ class InstantiationTest extends TestCase
     }
 
     /**
-     * @depends testResolveReturnsSameInstanceMultipleTimes
-     * @throws \ReflectionException
+     * @depends testResolveReturnsSingletonIfAvailable
      */
-    public function testRebindReturnsNewInstance()
-    {
-        $this->container->resolve(InstantiableClassWithoutParams::class);
-
-        $new = new InstantiableClassWithoutParams();
-        $this->container->bind(InstantiableClassWithoutParams::class, $new);
-        $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
-
-        self::assertSame($new, $inst2);
-    }
-
     public function testFlushRemovesResolvedInstances()
     {
+        $this->container->register(InstantiableClassWithoutParams::class, new InstantiableClassWithoutParams());
         $inst1 = $this->container->resolve(InstantiableClassWithoutParams::class);
-        self::assertTrue($this->container->has(InstantiableClassWithoutParams::class));
 
         $this->container->flush();
         self::assertFalse($this->container->has(InstantiableClassWithoutParams::class));

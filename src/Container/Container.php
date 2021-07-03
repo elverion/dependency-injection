@@ -7,8 +7,6 @@ use Elverion\DependencyInjection\Container\Invoker\InvokerFactory;
 use Elverion\DependencyInjection\Exception\BindNotFoundException;
 use Elverion\DependencyInjection\Exception\NotFoundException;
 use Elverion\DependencyInjection\Exception\UnresolvableDependencyException;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionParameter;
@@ -18,14 +16,11 @@ class Container implements ContainerContract
 {
     protected static ?ContainerContract $instance = null; // Singleton
 
-    protected array $resolved = []; // Types that have been resolved and may be re-used
     protected array $binds = []; // User-specified bindings from abstract to concrete implementations
+    protected array $resolved = []; // Types that have been resolved
+    protected array $instances = []; // Singletons that have been registered and may be re-used
 
-    /**
-     * Returns the singleton
-     *
-     * @return ContainerContract|null
-     */
+    /** @inheritDoc */
     public static function getInstance(): ?ContainerContract
     {
         if (is_null(static::$instance)) {
@@ -35,41 +30,21 @@ class Container implements ContainerContract
         return static::$instance;
     }
 
-    /**
-     * Allows overriding the singleton instance
-     * Returns the same instance for method chaining.
-     *
-     * @param ContainerContract $instance
-     * @return ContainerContract
-     */
+    /** @inheritDoc */
     public static function setInstance(ContainerContract $instance): ContainerContract
     {
         static::$instance = $instance;
         return $instance;
     }
 
-    /**
-     * Call a method, but with injected dependencies!
-     *
-     * @param $callback
-     * @param array $parameters
-     * @param string $defaultMethod
-     * @return mixed
-     */
+    /** @inheritDoc */
     public function call($callback, array $parameters = [], $defaultMethod = '__invoke')
     {
         $invoker = InvokerFactory::make($this, $callback);
         return $invoker->invoke($parameters);
     }
 
-    /**
-     * Returns the dependencies in key-value pairs for a method
-     *
-     * @param Reflector $reflector
-     * @param array $parameters
-     * @return array
-     * @throws ReflectionException
-     */
+    /** @inheritDoc */
     public function getMethodDependencies(Reflector $reflector, array $parameters = []): array
     {
         $resolvedParams = [];
@@ -86,14 +61,7 @@ class Container implements ContainerContract
         return $resolvedParams;
     }
 
-    /**
-     * Makes a new instance of an item with dependency injection.
-     * This does *not* store the resolved item for future use!
-     *
-     * @param string $fqn
-     * @return mixed|object
-     * @throws ReflectionException
-     */
+    /** @inheritDoc */
     public function make(string $fqn)
     {
         $reflection = new ReflectionClass($fqn);
@@ -126,27 +94,17 @@ class Container implements ContainerContract
         return $reflection->newInstanceArgs($resolvedParams);
     }
 
-    /**
-     * Returns an already-resolved item if one exists, or resolves and returns it.
-     * Stores the resolution for future use such that additional calls will
-     * return the previously resolved item.
-     *
-     * @param string $id
-     * @return mixed
-     * @throws ReflectionException
-     */
+    /** @inheritDoc */
     public function resolve(string $id)
     {
-        if ($this->hasBind($id)) {
-            return $this->binds[$id];
+        if ($this->isRegistered($id)) {
+            return $this->instances[$id];
         }
 
-        if ($this->has($id)) {
-            return $this->resolved[$id];
-        }
+        $item = $this->make($id);
 
-        $this->resolved[$id] = $this->make($id);
-        return $this->resolved[$id];
+        $this->resolved[$id] = true;
+        return $item;
     }
 
     /**
@@ -190,23 +148,25 @@ class Container implements ContainerContract
         throw new UnresolvableDependencyException();
     }
 
-    /**
-     * Binds a concrete implementation to an abstract
-     *
-     * @param string $abstract
-     * @param string|Closure $concrete
-     */
+    /** @inheritDoc */
+    public function register(string $id, $concrete): void
+    {
+        $this->instances[$id] = $concrete;
+    }
+
+    /** @inheritDoc */
+    public function isRegistered(string $id): bool
+    {
+        return array_key_exists($id, $this->instances);
+    }
+
+    /** @inheritDoc */
     public function bind(string $abstract, $concrete): void
     {
         $this->binds[$abstract] = $concrete;
     }
 
-    /**
-     * Returns true if a bind for the abstract exists, otherwise returns false.
-     *
-     * @param string $abstract
-     * @return bool
-     */
+    /** @inheritDoc */
     public function hasBind(string $abstract): bool
     {
         return array_key_exists($abstract, $this->binds);
@@ -239,49 +199,29 @@ class Container implements ContainerContract
         return $resolved;
     }
 
-    /**
-     * Forget all binds, resolutions, etc.
-     * @return void
-     */
+    /** @inheritDoc */
     public function flush(): void
     {
         $this->binds = [];
         $this->resolved = [];
+        $this->instances = [];
     }
 
-    /**
-     * Finds an entry of the container by its identifier and returns it.
-     *
-     * @param string $id Identifier of the entry to look for.
-     *
-     * @return mixed Entry.
-     * @throws ContainerExceptionInterface Error while retrieving the entry.
-     *
-     * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
-     */
+    /** @inheritDoc */
     public function get(string $id)
     {
         if (!$this->has($id)) {
             throw new NotFoundException();
         }
 
-        return $this->resolved[$id];
+        return $this->resolve($id);
     }
 
-    /**
-     * Returns true if the container can return an entry for the given identifier.
-     * Returns false otherwise.
-     *
-     * `has($id)` returning true does not mean that `get($id)` will not throw an exception.
-     * It does however mean that `get($id)` will not throw a `NotFoundExceptionInterface`.
-     *
-     * @param string $id Identifier of the entry to look for.
-     *
-     * @return bool
-     */
+    /** @inheritDoc */
     public function has(string $id): bool
     {
-        return array_key_exists($id, $this->resolved)
+        return array_key_exists($id, $this->instances)
+            || array_key_exists($id, $this->resolved)
             || array_key_exists($id, $this->binds);
     }
 }

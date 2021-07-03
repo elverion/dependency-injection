@@ -52,14 +52,29 @@ interface ContainerContract extends ContainerInterface
     public function make(string $fqn);
 
     /**
-     * Returns an already-resolved item if one exists, or resolves and returns it.
-     * Stores the resolution for future use such that additional calls will
-     * return the previously resolved item.
+     * Returns a registered singleton if available, or makes
+     * and returns one.
      *
      * @param string $id
      * @return mixed
      */
     public function resolve(string $id);
+
+    /**
+     * Register a singleton
+     *
+     * @param string $id
+     * @param $concrete
+     */
+    public function register(string $id, $concrete): void;
+
+    /**
+     * Returns whether or not a singleton has been registered.
+     *
+     * @param string $id
+     * @return bool
+     */
+    public function isRegistered(string $id): bool;
 
     /**
      * Binds a concrete implementation to an abstract
