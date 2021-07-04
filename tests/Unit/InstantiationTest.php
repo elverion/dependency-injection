@@ -58,6 +58,24 @@ class InstantiationTest extends TestCase
         self::assertSame(25, $result->age);
     }
 
+    public function testCanMakeWithParameters()
+    {
+        $result = $this->container->make(InstantiableClassWithPrimitive::class, ['name' => 'Suzie', 'age' => 22]);
+
+        self::assertSame('Suzie', $result->name);
+        self::assertSame(22, $result->age);
+    }
+
+    /** @depends testResolveReturnsSingletonIfAvailable */
+    public function testResolveWithParametersDoesNotUseSingleton()
+    {
+        $this->container->register(InstantiableClassWithPrimitive::class, new InstantiableClassWithPrimitive('Bob', 25));
+        $result = $this->container->resolve(InstantiableClassWithPrimitive::class, ['name' => 'Suzie', 'age' => 22]);
+
+        self::assertSame('Suzie', $result->name);
+        self::assertSame(22, $result->age);
+    }
+
     public function testCanMakeFromBind()
     {
         $this->container->bind(InstantiableClassInterface::class, InstantiableByInterfaceClass::class);

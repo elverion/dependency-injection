@@ -62,7 +62,7 @@ class Container implements ContainerContract
     }
 
     /** @inheritDoc */
-    public function make(string $fqn)
+    public function make(string $fqn, array $parameters = [])
     {
         $reflection = new ReflectionClass($fqn);
 
@@ -88,20 +88,23 @@ class Container implements ContainerContract
 
         // Resolve each dependency
         foreach ($params as $param) {
-            $resolvedParams[$param->getName()] = $this->resolveDependency($param);
+            $resolvedParams[$param->getName()]
+                = $parameters[$param->getName()] ?? $this->resolveDependency($param);
         }
 
         return $reflection->newInstanceArgs($resolvedParams);
     }
 
     /** @inheritDoc */
-    public function resolve(string $id)
+    public function resolve(string $id, array $parameters = [])
     {
-        if ($this->isRegistered($id)) {
+        // If there are user-controlled parameters passed in, we can't rely on
+        // a singleton here; we'll have to construct an all-new instance.
+        if ($this->isRegistered($id) && empty($parameters)) {
             return $this->instances[$id];
         }
 
-        $item = $this->make($id);
+        $item = $this->make($id, $parameters);
 
         $this->resolved[$id] = true;
         return $item;

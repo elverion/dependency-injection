@@ -44,21 +44,31 @@ interface ContainerContract extends ContainerInterface
 
     /**
      * Makes a new instance of an item with dependency injection.
-     * This does *not* store the resolved item for future use!
+     *
+     * User-defined parameters can be passed in by an array in
+     * key-value form, where the key should be the name of the
+     * parameter.
+     *
+     * The parameters array will *not* be forwarded to
+     * dependencies (for now, planned for future).
      *
      * @param string $fqn
+     * @param array $parameters
      * @return mixed|object
      */
-    public function make(string $fqn);
+    public function make(string $fqn, array $parameters = []);
 
     /**
      * Returns a registered singleton if available, or makes
      * and returns one.
      *
+     * See make() for more information.
+     *
      * @param string $id
+     * @param array $parameters
      * @return mixed
      */
-    public function resolve(string $id);
+    public function resolve(string $id, array $parameters = []);
 
     /**
      * Register a singleton
