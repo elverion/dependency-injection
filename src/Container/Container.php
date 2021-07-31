@@ -83,16 +83,54 @@ class Container implements ContainerContract
             return $reflection->newInstanceArgs();
         }
 
-        $params = $constructor->getParameters();
+        $constructorParams = $constructor->getParameters();
         $resolvedParams = [];
 
         // Resolve each dependency
-        foreach ($params as $param) {
-            $resolvedParams[$param->getName()]
-                = $parameters[$param->getName()] ?? $this->resolveDependency($param);
+        $exploded = $this->explodeParameters($parameters);
+
+        foreach ($constructorParams as $k => $constructorParam) {
+            $paramName = $constructorParam->getName();
+            $resolvedParams[$paramName] = $parameters[$paramName]
+                ?? $this->resolveDependency($constructorParam, $exploded[$paramName] ?? []);
         }
 
         return $reflection->newInstanceArgs($resolvedParams);
+    }
+
+    /**
+     * Splits parameters' key by "." into parent and child keys.
+     * This means an input like this:
+     * ['parent.param' => 1, 'parent.child.param' => 2]
+     *
+     * Would result in:
+     * ['parent' => ['param' => 1, 'child.param' => 2]]
+     *
+     * This is used to forward values to dependencies
+     *
+     * @param array $parameters
+     * @return array
+     */
+    protected function explodeParameters(array $parameters): array
+    {
+        $result = [];
+        foreach ($parameters as $key => $value) {
+            $dotPosition = strpos($key, '.');
+            if ($dotPosition === false) {
+                $result[$key] = $value;
+                continue;
+            }
+
+            $parentKey = substr($key, 0, $dotPosition);
+            $childKey = substr($key, $dotPosition + 1);
+
+            if (!array_key_exists($parentKey, $result)) {
+                $result[$parentKey] = [];
+            }
+
+            $result[$parentKey][$childKey] = $value;
+        }
+        return $result;
     }
 
     /** @inheritDoc */
@@ -114,10 +152,11 @@ class Container implements ContainerContract
      * Resolves a reflected parameter if possible, or throws if it could not be resolved
      *
      * @param ReflectionParameter $dependency
+     * @param array $params
      * @return mixed|object|null
      * @throws ReflectionException
      */
-    protected function resolveDependency(ReflectionParameter $dependency)
+    protected function resolveDependency(ReflectionParameter $dependency, array $params = [])
     {
         $type = $dependency->getType();
 
@@ -128,7 +167,7 @@ class Container implements ContainerContract
 
         // Construct from FQCN
         if (class_exists($type->getName())) {
-            return $this->make($type->getName());
+            return $this->make($type->getName(), $params);
         }
 
         if ($type->isBuiltin()) {

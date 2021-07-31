@@ -6,6 +6,7 @@ namespace Tests\Unit;
 use Elverion\DependencyInjection\Container\Container;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\InstantiableByInterfaceClass;
+use Tests\Support\InstantiableClassGrandparent;
 use Tests\Support\InstantiableClassInterface;
 use Tests\Support\InstantiableClassWithDefaultParams;
 use Tests\Support\InstantiableClassWithDependency;
@@ -129,5 +130,17 @@ class InstantiationTest extends TestCase
         $inst2 = $this->container->resolve(InstantiableClassWithoutParams::class);
 
         self::assertNotSame($inst1, $inst2);
+    }
+
+    public function testCanInstantiateWithSubObjectParams()
+    {
+        $inst = $this->container->make(InstantiableClassGrandparent::class, [
+            'local' => 'grandparent',
+            'child.other.default' => 'hello world',
+            'child.local' => 'goodbye world',
+        ]);
+        self::assertSame('grandparent', $inst->local);
+        self::assertSame('hello world', $inst->child->other->default);
+        self::assertSame('goodbye world', $inst->child->local);
     }
 }
