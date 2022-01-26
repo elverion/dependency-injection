@@ -14,4 +14,9 @@ class CallableClass
 
         return 'bound method was called';
     }
+
+    public function call2(InstantiableOnlyWithUserIntervention $config)
+    {
+        return 'bound method was called';
+    }
 }

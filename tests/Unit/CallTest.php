@@ -7,6 +7,7 @@ use Elverion\DependencyInjection\Container\Container;
 use PHPUnit\Framework\TestCase;
 use Tests\Support\CallableClass;
 use Tests\Support\InstantiableClassWithoutParams;
+use Tests\Support\InstantiableOnlyWithUserIntervention;
 
 
 function testFunctionCall(InstantiableClassWithoutParams $class, string $return): string
@@ -32,6 +33,11 @@ class CallTest extends TestCase
 
         self::assertInstanceOf(InstantiableClassWithoutParams::class, $inst->other);
         self::assertSame('Hello World', $inst->hello);
+        self::assertSame('bound method was called', $result);
+
+        $dependency = new InstantiableOnlyWithUserIntervention(['item1' => 'yup']);
+        $this->container->register(InstantiableOnlyWithUserIntervention::class, $dependency);
+        $result = $this->container->call([$inst, 'call2']);
         self::assertSame('bound method was called', $result);
     }
 

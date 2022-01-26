@@ -159,15 +159,21 @@ class Container implements ContainerContract
     protected function resolveDependency(ReflectionParameter $dependency, array $params = [])
     {
         $type = $dependency->getType();
+        $name = $type->getName();
+
+        // Instantiated singletons
+        if ($this->isRegistered($name)) {
+            return $this->resolve($name, $params);
+        }
 
         // Bound by type; for example, a concrete class bound to an interface
-        if ($this->hasBind($type->getName())) {
-            return $this->resolveBind($type->getName());
+        if ($this->hasBind($name)) {
+            return $this->resolveBind($name);
         }
 
         // Construct from FQCN
-        if (class_exists($type->getName())) {
-            return $this->make($type->getName(), $params);
+        if (class_exists($name)) {
+            return $this->make($name, $params);
         }
 
         if ($type->isBuiltin()) {
