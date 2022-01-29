@@ -142,6 +142,10 @@ class Container implements ContainerContract
             return $this->instances[$id];
         }
 
+        if (isset($this->binds[$id]) && empty($parameters)) {
+            return $this->resolveBind($id);
+        }
+
         $item = $this->make($id, $parameters);
 
         $this->resolved[$id] = true;

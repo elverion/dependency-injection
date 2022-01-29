@@ -85,6 +85,18 @@ class InstantiationTest extends TestCase
         self::assertInstanceOf(InstantiableByInterfaceClass::class, $result);
     }
 
+    public function testBindClosureReturnsSameItem()
+    {
+        $item1 = new InstantiableClassWithPrimitive('Bob', 21);
+        $this->container->bind(InstantiableClassWithPrimitive::class, static function () use ($item1) {
+            return $item1;
+        });
+
+        $item2 = $this->container->resolve(InstantiableClassWithPrimitive::class);
+
+        self::assertSame($item1, $item2);
+    }
+
     public function testCanMakeFromClosure()
     {
         $this->container->bind(InstantiableClassInterface::class, static function () {
