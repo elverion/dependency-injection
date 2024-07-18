@@ -1,6 +1,7 @@
 {
   "name": "elverion/dependency-injection",
   "description": "A minimalist dependency injection library for PHP",
+  "license": "MIT",
   "type": "library",
   "autoload": {
     "psr-4": {
