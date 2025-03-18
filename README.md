@@ -1,3 +1,7 @@
+![Packagist License](https://img.shields.io/packagist/l/elverion/dependency-injection?label=License)
+![Unit tests](https://img.shields.io/github/check-runs/elverion/dependency-injection/main?label=Tests)
+![Packagist Version](https://img.shields.io/packagist/v/elverion/dependency-injection?label=Version)
+
 ### About
 
 This project can be used to aid in [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) in your
