@@ -20,6 +20,9 @@ class BoundMethodInvoker implements InvokerInterface
 
     public function invoke(array $params)
     {
-        return $this->reflection->invokeArgs($this->class, $this->container->getMethodDependencies($this->reflection, $params));
+        return $this->reflection->invokeArgs(
+            $this->class,
+            $this->container->getMethodDependencies($this->reflection, $params)
+        );
     }
 }

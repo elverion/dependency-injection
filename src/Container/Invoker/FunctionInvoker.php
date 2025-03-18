@@ -14,7 +14,9 @@ class FunctionInvoker extends ClosureInvoker implements InvokerInterface
     public function __construct(ContainerContract $container, string $function)
     {
         if (!function_exists($function)) {
-            throw new DomainException("\$function was expected to be a function name but no such function could be found; received `{$function}`");
+            throw new DomainException(
+                "\$function was expected to be a function name but no such function could be found; received `{$function}`"
+            );
         }
 
         $this->container = $container;

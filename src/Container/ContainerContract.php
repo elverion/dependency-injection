@@ -2,6 +2,7 @@
 
 namespace Elverion\DependencyInjection\Container;
 
+use Closure;
 use Psr\Container\ContainerInterface;
 use Reflector;
 
@@ -90,7 +91,7 @@ interface ContainerContract extends ContainerInterface
      * Binds a concrete implementation to an abstract
      *
      * @param string $abstract
-     * @param string|\Closure $concrete
+     * @param string|Closure $concrete
      */
     public function bind(string $abstract, $concrete): void;
 

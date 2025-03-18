@@ -45,23 +45,6 @@ class Container implements ContainerContract
     }
 
     /** @inheritDoc */
-    public function getMethodDependencies(Reflector $reflector, array $parameters = []): array
-    {
-        $resolvedParams = [];
-        foreach ($reflector->getParameters() as $param) {
-            if (array_key_exists($param->getName(), $parameters)) {
-                // Use the value supplied by user
-                $resolvedParams[$param->getName()] = $parameters[$param->getName()];
-            } else {
-                // Resolve it
-                $resolvedParams[$param->getName()] = $this->resolveDependency($param);
-            }
-        }
-
-        return $resolvedParams;
-    }
-
-    /** @inheritDoc */
     public function make(string $fqn, array $parameters = [])
     {
         $reflection = new ReflectionClass($fqn);
@@ -98,6 +81,39 @@ class Container implements ContainerContract
         return $reflection->newInstanceArgs($resolvedParams);
     }
 
+    /** @inheritDoc */
+    public function hasBind(string $abstract): bool
+    {
+        return array_key_exists($abstract, $this->binds);
+    }
+
+    /**
+     * Resolves a concrete implementation from an abstract
+     *
+     * @param string $abstract
+     * @return mixed|object
+     * @throws ReflectionException
+     * @throws BindNotFoundException
+     */
+    protected function resolveBind(string $abstract)
+    {
+        if (!array_key_exists($abstract, $this->binds)) {
+            throw new BindNotFoundException();
+        }
+
+        $resolved = $this->binds[$abstract];
+
+        if (is_string($resolved)) {
+            return $this->make($resolved);
+        }
+
+        if ($resolved instanceof Closure) {
+            return $resolved($this);
+        }
+
+        return $resolved;
+    }
+
     /**
      * Splits parameters' key by "." into parent and child keys.
      * This means an input like this:
@@ -131,25 +147,6 @@ class Container implements ContainerContract
             $result[$parentKey][$childKey] = $value;
         }
         return $result;
-    }
-
-    /** @inheritDoc */
-    public function resolve(string $id, array $parameters = [])
-    {
-        // If there are user-controlled parameters passed in, we can't rely on
-        // a singleton here; we'll have to construct an all-new instance.
-        if ($this->isRegistered($id) && empty($parameters)) {
-            return $this->instances[$id];
-        }
-
-        if (isset($this->binds[$id]) && empty($parameters)) {
-            return $this->resolveBind($id);
-        }
-
-        $item = $this->make($id, $parameters);
-
-        $this->resolved[$id] = true;
-        return $item;
     }
 
     /**
@@ -201,54 +198,57 @@ class Container implements ContainerContract
     }
 
     /** @inheritDoc */
-    public function register(string $id, $concrete): void
-    {
-        $this->instances[$id] = $concrete;
-    }
-
-    /** @inheritDoc */
     public function isRegistered(string $id): bool
     {
         return array_key_exists($id, $this->instances);
     }
 
     /** @inheritDoc */
-    public function bind(string $abstract, $concrete): void
+    public function resolve(string $id, array $parameters = [])
     {
-        $this->binds[$abstract] = $concrete;
+        // If there are user-controlled parameters passed in, we can't rely on
+        // a singleton here; we'll have to construct an all-new instance.
+        if ($this->isRegistered($id) && empty($parameters)) {
+            return $this->instances[$id];
+        }
+
+        if (isset($this->binds[$id]) && empty($parameters)) {
+            return $this->resolveBind($id);
+        }
+
+        $item = $this->make($id, $parameters);
+
+        $this->resolved[$id] = true;
+        return $item;
     }
 
     /** @inheritDoc */
-    public function hasBind(string $abstract): bool
+    public function getMethodDependencies(Reflector $reflector, array $parameters = []): array
     {
-        return array_key_exists($abstract, $this->binds);
+        $resolvedParams = [];
+        foreach ($reflector->getParameters() as $param) {
+            if (array_key_exists($param->getName(), $parameters)) {
+                // Use the value supplied by user
+                $resolvedParams[$param->getName()] = $parameters[$param->getName()];
+            } else {
+                // Resolve it
+                $resolvedParams[$param->getName()] = $this->resolveDependency($param);
+            }
+        }
+
+        return $resolvedParams;
     }
 
-    /**
-     * Resolves a concrete implementation from an abstract
-     *
-     * @param string $abstract
-     * @return mixed|object
-     * @throws ReflectionException
-     * @throws BindNotFoundException
-     */
-    protected function resolveBind(string $abstract)
+    /** @inheritDoc */
+    public function register(string $id, $concrete): void
     {
-        if (!array_key_exists($abstract, $this->binds)) {
-            throw new BindNotFoundException();
-        }
+        $this->instances[$id] = $concrete;
+    }
 
-        $resolved = $this->binds[$abstract];
-
-        if (is_string($resolved)) {
-            return $this->make($resolved);
-        }
-
-        if ($resolved instanceof Closure) {
-            return $resolved($this);
-        }
-
-        return $resolved;
+    /** @inheritDoc */
+    public function bind(string $abstract, $concrete): void
+    {
+        $this->binds[$abstract] = $concrete;
     }
 
     /** @inheritDoc */
