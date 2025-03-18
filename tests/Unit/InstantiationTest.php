@@ -70,7 +70,10 @@ class InstantiationTest extends TestCase
     /** @depends testResolveReturnsSingletonIfAvailable */
     public function testResolveWithParametersDoesNotUseSingleton()
     {
-        $this->container->register(InstantiableClassWithPrimitive::class, new InstantiableClassWithPrimitive('Bob', 25));
+        $this->container->register(
+            InstantiableClassWithPrimitive::class,
+            new InstantiableClassWithPrimitive('Bob', 25)
+        );
         $result = $this->container->resolve(InstantiableClassWithPrimitive::class, ['name' => 'Suzie', 'age' => 22]);
 
         self::assertSame('Suzie', $result->name);
@@ -116,9 +119,7 @@ class InstantiationTest extends TestCase
         self::assertSame($inst1, $inst2);
     }
 
-    /**
-     * @depends testResolveReturnsSingletonIfAvailable
-     */
+    /** @depends testResolveReturnsSingletonIfAvailable */
     public function testFlushRemovesResolvedInstances()
     {
         $this->container->register(InstantiableClassWithoutParams::class, new InstantiableClassWithoutParams());

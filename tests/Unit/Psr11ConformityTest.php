@@ -39,7 +39,7 @@ class Psr11ConformityTest extends TestCase
 
         $this->container->get(InstantiableClassWithoutParams::class); // No exception
 
-        self::expectError();
+        self::expectExceptionMessage('must be of type string');
         $this->container->get(new InstantiableClassWithoutParams());
     }
 
